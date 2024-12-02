@@ -1,0 +1,27 @@
+plugins {
+    id 'java'
+}
+
+group = 'ch.fhnw.comgr'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+def lwjglVersion = '3.3.3'
+def lwjglNatives = 'natives-windows'
+
+dependencies {
+    implementation "org.lwjgl:lwjgl:$lwjglVersion"
+    runtimeOnly "org.lwjgl:lwjgl:$lwjglVersion:$lwjglNatives"
+
+    implementation "org.lwjgl:lwjgl-assimp:$lwjglVersion"
+    runtimeOnly "org.lwjgl:lwjgl-assimp:$lwjglVersion:$lwjglNatives"
+
+    implementation "org.lwjgl:lwjgl-glfw:$lwjglVersion"
+    runtimeOnly "org.lwjgl:lwjgl-glfw:$lwjglVersion:$lwjglNatives"
+
+    implementation "org.lwjgl:lwjgl-opengl:$lwjglVersion"
+    runtimeOnly "org.lwjgl:lwjgl-opengl:$lwjglVersion:$lwjglNatives"
+}
