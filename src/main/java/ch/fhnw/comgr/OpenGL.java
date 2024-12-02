@@ -210,7 +210,6 @@ public class OpenGL {
             glUniform1f(glGetUniformLocation(hProgram, "inTime"), frameTime + 2f);
             glDrawElements(GL_TRIANGLES, triangleIndices.length, GL_UNSIGNED_INT, 0);
 
-
             // display
             GLFW.glfwSwapBuffers(hWindow);
             GLFW.glfwPollEvents();
