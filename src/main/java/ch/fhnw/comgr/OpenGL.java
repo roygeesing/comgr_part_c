@@ -153,10 +153,17 @@ public class OpenGL {
         if (error != GL_NO_ERROR)
             throw new Exception(Integer.toString(error));
 
+        int[] widthArray = new int[1];
+        int[] heightArray = new int[1];
+
         // render loop
         var startTime = System.currentTimeMillis();
         while (!GLFW.glfwWindowShouldClose(hWindow)) {
             float frameTime = (System.currentTimeMillis() - startTime) * 0.001f;
+
+            GLFW.glfwGetWindowSize(hWindow, widthArray, heightArray);
+            int width = widthArray[0];
+            int height = heightArray[0];
 
             // clear screen and z-buffer
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -169,7 +176,7 @@ public class OpenGL {
             var vp = Matrix4x4.multiply(
                     Matrix4x4.createPerspectiveFieldOfView(
                             (float) Math.toRadians(90),
-                            1f,
+                            (float) width / height,
                             0.1f,
                             100f
                     ).transpose(),
