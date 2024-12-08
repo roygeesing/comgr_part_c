@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 public record Shader(int shader) {
     public static Shader readFile(String name, int type) {
         try (
-                InputStream in = Shader.class.getResourceAsStream("/" + name + ".glsl");
+                InputStream in = Shader.class.getResourceAsStream("/shader/" + name + ".glsl");
                 InputStreamReader inputStreamReader = new InputStreamReader(Objects.requireNonNull(in));
                 BufferedReader reader = new BufferedReader(Objects.requireNonNull(inputStreamReader))
         ) {

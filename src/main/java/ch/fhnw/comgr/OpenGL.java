@@ -1,6 +1,7 @@
 package ch.fhnw.comgr;
 
 import ch.fhnw.comgr.matrix.Matrix4x4;
+import ch.fhnw.comgr.obj.Obj;
 import ch.fhnw.comgr.vector.Vector3;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
@@ -79,38 +80,43 @@ public class OpenGL {
         if (glGetProgrami(hProgram, GL_LINK_STATUS) != GL_TRUE)
             throw new Exception(glGetProgramInfoLog(hProgram));
 
+        // load model
+        Obj teapot = Obj.parse("bunny");
+
         // upload model vertices to a vbo
-        var triangleVertices = new float[] {
-                0.5f, 0.5f, 0.5f,
-                0.5f, 0.5f, -0.5f,
-                0.5f, -0.5f, 0.5f,
-                0.5f, -0.5f, -0.5f,
-                -0.5f, 0.5f, 0.5f,
-                -0.5f, 0.5f, -0.5f,
-                -0.5f, -0.5f, 0.5f,
-                -0.5f, -0.5f, -0.5f,
-        };
+//        var triangleVertices = new float[] {
+//                0.5f, 0.5f, 0.5f,
+//                0.5f, 0.5f, -0.5f,
+//                0.5f, -0.5f, 0.5f,
+//                0.5f, -0.5f, -0.5f,
+//                -0.5f, 0.5f, 0.5f,
+//                -0.5f, 0.5f, -0.5f,
+//                -0.5f, -0.5f, 0.5f,
+//                -0.5f, -0.5f, -0.5f,
+//        };
+        var triangleVertices = teapot.getVertexArray();
         var vboTriangleVertices = glGenBuffers();
         glBindBuffer(GL_ARRAY_BUFFER, vboTriangleVertices);
         glBufferData(GL_ARRAY_BUFFER, triangleVertices, GL_STATIC_DRAW);
 
         // upload model indices to a vbo
-        var triangleIndices = new int[] {
-                2, 1, 0,
-                1, 2, 3,
-                4, 5, 6,
-                7, 6, 5,
-
-                0, 1, 4,
-                5, 4, 1,
-                6, 3, 2,
-                3, 6, 7,
-
-                4, 2, 0,
-                2, 4, 6,
-                1, 3, 5,
-                7, 5, 3,
-        };
+//        var triangleIndices = new int[] {
+//                2, 1, 0,
+//                1, 2, 3,
+//                4, 5, 6,
+//                7, 6, 5,
+//
+//                0, 1, 4,
+//                5, 4, 1,
+//                6, 3, 2,
+//                3, 6, 7,
+//
+//                4, 2, 0,
+//                2, 4, 6,
+//                1, 3, 5,
+//                7, 5, 3,
+//        };
+        var triangleIndices = teapot.getTriangleArray();
         var vboTriangleIndices = glGenBuffers();
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboTriangleIndices);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, triangleIndices, GL_STATIC_DRAW);
@@ -127,16 +133,20 @@ public class OpenGL {
 //        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboTriangleIndices);
 
         // color vbo
-        float[] colors = new float[] {
-                1f, 0f, 0f,
-                0f, 1f, 0f,
-                0f, 0f, 1f,
-                1f, 0f, 1f,
-                1f, 1f, 0f,
-                0f, 1f, 1f,
-                1f, 1f, 1f,
-                0f, 0f, 0f,
-        };
+//        float[] colors = new float[] {
+//                1f, 0f, 0f,
+//                0f, 1f, 0f,
+//                0f, 0f, 1f,
+//                1f, 0f, 1f,
+//                1f, 1f, 0f,
+//                0f, 1f, 1f,
+//                1f, 1f, 1f,
+//                0f, 0f, 0f,
+//        };
+        float[] colors = new float[triangleVertices.length];
+        for (int i = 0; i < colors.length; i++) {
+            colors[i] = (float) Math.random();
+        }
         int vboColor = glGenBuffers();
         glBindBuffer(GL_ARRAY_BUFFER, vboColor);
         glBufferData(GL_ARRAY_BUFFER, colors, GL_STATIC_DRAW);
@@ -187,35 +197,37 @@ public class OpenGL {
                     ).transpose()
             );
 
-            var mvp0 = Matrix4x4.multiply(
-                    vp,
-                    Matrix4x4.createTranslation(new Vector3(2f, 0f, 0f)).transpose(),
-                    Matrix4x4.createRotationX(frameTime).transpose(),
-                    Matrix4x4.createRotationY(frameTime).transpose()
-            );
-            glUniformMatrix4fv(glGetUniformLocation(hProgram, "inMatrix"), false, mvp0.toArray());
-            glUniform1f(glGetUniformLocation(hProgram, "inTime"), frameTime);
-            glDrawElements(GL_TRIANGLES, triangleIndices.length, GL_UNSIGNED_INT, 0);
+//            var mvp0 = Matrix4x4.multiply(
+//                    vp,
+//                    Matrix4x4.createTranslation(new Vector3(2f, 0f, 0f)).transpose(),
+//                    Matrix4x4.createRotationX(frameTime).transpose(),
+//                    Matrix4x4.createRotationY(frameTime).transpose()
+//            );
+//            glUniformMatrix4fv(glGetUniformLocation(hProgram, "inMatrix"), false, mvp0.toArray());
+//            glUniform1f(glGetUniformLocation(hProgram, "inTime"), frameTime);
+//            glDrawElements(GL_TRIANGLES, triangleIndices.length, GL_UNSIGNED_INT, 0);
 
             var mvp1 = Matrix4x4.multiply(
                     vp,
-                    Matrix4x4.createTranslation(new Vector3(0f, 0f, 0f)).transpose(),
-                    Matrix4x4.createRotationX(frameTime + 1f).transpose(),
-                    Matrix4x4.createRotationY(frameTime + 1f).transpose()
+                    Matrix4x4.createScale(30f).transpose(),
+                    Matrix4x4.createTranslation(0f, 0f, 0f).transpose(),
+//                    Matrix4x4.createRotationX(frameTime + 1f).transpose(),
+                    Matrix4x4.createRotationY(frameTime + 1f).transpose(),
+                    Matrix4x4.createTranslation(0.025f, -0.1f, 0f).transpose()
             );
             glUniformMatrix4fv(glGetUniformLocation(hProgram, "inMatrix"), false, mvp1.toArray());
             glUniform1f(glGetUniformLocation(hProgram, "inTime"), frameTime + 1f);
             glDrawElements(GL_TRIANGLES, triangleIndices.length, GL_UNSIGNED_INT, 0);
-
-            var mvp2 = Matrix4x4.multiply(
-                    vp,
-                    Matrix4x4.createTranslation(new Vector3(-2f, 0f, 0f)).transpose(),
-                    Matrix4x4.createRotationX(frameTime + 2f).transpose(),
-                    Matrix4x4.createRotationY(frameTime + 2f).transpose()
-            );
-            glUniformMatrix4fv(glGetUniformLocation(hProgram, "inMatrix"), false, mvp2.toArray());
-            glUniform1f(glGetUniformLocation(hProgram, "inTime"), frameTime + 2f);
-            glDrawElements(GL_TRIANGLES, triangleIndices.length, GL_UNSIGNED_INT, 0);
+//
+//            var mvp2 = Matrix4x4.multiply(
+//                    vp,
+//                    Matrix4x4.createTranslation(new Vector3(-2f, 0f, 0f)).transpose(),
+//                    Matrix4x4.createRotationX(frameTime + 2f).transpose(),
+//                    Matrix4x4.createRotationY(frameTime + 2f).transpose()
+//            );
+//            glUniformMatrix4fv(glGetUniformLocation(hProgram, "inMatrix"), false, mvp2.toArray());
+//            glUniform1f(glGetUniformLocation(hProgram, "inTime"), frameTime + 2f);
+//            glDrawElements(GL_TRIANGLES, triangleIndices.length, GL_UNSIGNED_INT, 0);
 
             // display
             GLFW.glfwSwapBuffers(hWindow);

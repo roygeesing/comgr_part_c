@@ -187,4 +187,8 @@ public record Vector3(float x, float y, float z) {
 
         return new Vector3(red, green, blue);
     }
+
+    public float[] toArray() {
+        return new float[] {x, y, z};
+    }
 }
