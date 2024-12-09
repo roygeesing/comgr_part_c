@@ -2,6 +2,7 @@ package ch.fhnw.comgr;
 
 import ch.fhnw.comgr.matrix.Matrix4x4;
 import ch.fhnw.comgr.obj.Obj;
+import ch.fhnw.comgr.texture.ImageTexture;
 import ch.fhnw.comgr.vector.Vector3;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
@@ -80,83 +81,80 @@ public class OpenGL {
         if (glGetProgrami(hProgram, GL_LINK_STATUS) != GL_TRUE)
             throw new Exception(glGetProgramInfoLog(hProgram));
 
+        // set up a vao
+        var vaoTriangle = glGenVertexArrays();
+        glBindVertexArray(vaoTriangle);
+
         // load model
-        Obj teapot = Obj.parse("bunny");
+        Obj teapot = Obj.parse("axe");
 
         // upload model vertices to a vbo
-//        var triangleVertices = new float[] {
-//                0.5f, 0.5f, 0.5f,
-//                0.5f, 0.5f, -0.5f,
-//                0.5f, -0.5f, 0.5f,
-//                0.5f, -0.5f, -0.5f,
-//                -0.5f, 0.5f, 0.5f,
-//                -0.5f, 0.5f, -0.5f,
-//                -0.5f, -0.5f, 0.5f,
-//                -0.5f, -0.5f, -0.5f,
-//        };
         var triangleVertices = teapot.getVertexArray();
         var vboTriangleVertices = glGenBuffers();
         glBindBuffer(GL_ARRAY_BUFFER, vboTriangleVertices);
         glBufferData(GL_ARRAY_BUFFER, triangleVertices, GL_STATIC_DRAW);
 
         // upload model indices to a vbo
-//        var triangleIndices = new int[] {
-//                2, 1, 0,
-//                1, 2, 3,
-//                4, 5, 6,
-//                7, 6, 5,
-//
-//                0, 1, 4,
-//                5, 4, 1,
-//                6, 3, 2,
-//                3, 6, 7,
-//
-//                4, 2, 0,
-//                2, 4, 6,
-//                1, 3, 5,
-//                7, 5, 3,
-//        };
         var triangleIndices = teapot.getTriangleArray();
         var vboTriangleIndices = glGenBuffers();
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboTriangleIndices);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, triangleIndices, GL_STATIC_DRAW);
 
-        // set up a vao
-        var vaoTriangle = glGenVertexArrays();
-        glBindVertexArray(vaoTriangle);
+        // vertex position vao
         var posAttribIndex = glGetAttribLocation(hProgram, "inPos");
         if (posAttribIndex != -1) {
             glEnableVertexAttribArray(posAttribIndex);
-//            glBindBuffer(GL_ARRAY_BUFFER, vboTriangleVertices);
             glVertexAttribPointer(posAttribIndex, 3, GL_FLOAT, false, 0, 0);
         }
-//        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboTriangleIndices);
 
-        // color vbo
-//        float[] colors = new float[] {
-//                1f, 0f, 0f,
-//                0f, 1f, 0f,
-//                0f, 0f, 1f,
-//                1f, 0f, 1f,
-//                1f, 1f, 0f,
-//                0f, 1f, 1f,
-//                1f, 1f, 1f,
-//                0f, 0f, 0f,
-//        };
-        float[] colors = new float[triangleVertices.length];
-        for (int i = 0; i < colors.length; i++) {
-            colors[i] = (float) Math.random();
-        }
-        int vboColor = glGenBuffers();
-        glBindBuffer(GL_ARRAY_BUFFER, vboColor);
-        glBufferData(GL_ARRAY_BUFFER, colors, GL_STATIC_DRAW);
+        // normals vbo
+        var normals = teapot.getNormalArray();
+        var vboNormals = glGenBuffers();
+        glBindBuffer(GL_ARRAY_BUFFER, vboNormals);
+        glBufferData(GL_ARRAY_BUFFER, normals, GL_STATIC_DRAW);
 
-        // color vao
-        int colorAttrib = glGetAttribLocation(hProgram, "inColor");
-        if (colorAttrib != -1) {
-            glEnableVertexAttribArray(colorAttrib);
-            glVertexAttribPointer(colorAttrib, 3, GL_FLOAT, false, 0, 0);
+        // normals vao
+        var normalAttribIndex = glGetAttribLocation(hProgram, "inNormal");
+        if (normalAttribIndex != -1) {
+            glEnableVertexAttribArray(normalAttribIndex);
+            glVertexAttribPointer(normalAttribIndex, 3, GL_FLOAT, false, 0, 0);
         }
+
+        // texture coordinates vbo
+        var textureCoordinates = teapot.getStArray();
+        var vboTextureCoordinates = glGenBuffers();
+        glBindBuffer(GL_ARRAY_BUFFER, vboTextureCoordinates);
+        glBufferData(GL_ARRAY_BUFFER, textureCoordinates, GL_STATIC_DRAW);
+
+        // texture coordinates vao
+        var stAttribIndex = glGetAttribLocation(hProgram, "inSt");
+        if (stAttribIndex != -1) {
+            glEnableVertexAttribArray(stAttribIndex);
+            glVertexAttribPointer(stAttribIndex, 2, GL_FLOAT, false, 0, 0);
+        }
+
+        // image texture
+        ImageTexture imageTexture = ImageTexture.ofResource("/obj/axe.png");
+
+        int texture = glGenTextures();
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glTexImage2D(
+                GL_TEXTURE_2D,
+                0,
+                GL_SRGB8,
+                imageTexture.image().getWidth(),
+                imageTexture.image().getHeight(),
+                0,
+                GL_RGBA,
+                GL_UNSIGNED_BYTE,
+                imageTexture.getPixels()
+        );
+        glBindTexture(GL_TEXTURE_2D, 0);
 
         // check for errors during all previous calls
         var error = glGetError();
@@ -165,6 +163,24 @@ public class OpenGL {
 
         int[] widthArray = new int[1];
         int[] heightArray = new int[1];
+
+        // switch to our shader
+        glUseProgram(hProgram);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glUniform1i(glGetUniformLocation(hProgram, "imageTexture"), 0);
+
+        // light direction
+        glUniform3fv(
+                glGetUniformLocation(hProgram, "lightDirection"),
+                new Vector3(-1, 1, -1).normalize().toArray()
+        );
+
+        glUniform3fv(
+                glGetUniformLocation(hProgram, "cameraDirection"),
+                new Vector3(0, 0, 1).toArray()
+        );
 
         // render loop
         var startTime = System.currentTimeMillis();
@@ -177,11 +193,6 @@ public class OpenGL {
 
             // clear screen and z-buffer
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-            // switch to our shader
-            glUseProgram(hProgram);
-
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboTriangleIndices);
 
             var vp = Matrix4x4.multiply(
                     Matrix4x4.createPerspectiveFieldOfView(
@@ -209,11 +220,12 @@ public class OpenGL {
 
             var mvp1 = Matrix4x4.multiply(
                     vp,
-                    Matrix4x4.createScale(30f).transpose(),
-                    Matrix4x4.createTranslation(0f, 0f, 0f).transpose(),
-//                    Matrix4x4.createRotationX(frameTime + 1f).transpose(),
+//                    Matrix4x4.createScale(30f).transpose(),
+                    Matrix4x4.createTranslation(0f, 0f, 12f).transpose(),
+                    Matrix4x4.createRotationZ(frameTime * 0.5f + 1f).transpose(),
                     Matrix4x4.createRotationY(frameTime + 1f).transpose(),
-                    Matrix4x4.createTranslation(0.025f, -0.1f, 0f).transpose()
+//                    Matrix4x4.createTranslation(0.025f, -0.1f, 0f).transpose()
+                    Matrix4x4.createRotationX((float) -Math.PI / 2).transpose()
             );
             glUniformMatrix4fv(glGetUniformLocation(hProgram, "inMatrix"), false, mvp1.toArray());
             glUniform1f(glGetUniformLocation(hProgram, "inTime"), frameTime + 1f);

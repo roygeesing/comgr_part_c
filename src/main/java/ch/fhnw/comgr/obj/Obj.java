@@ -68,7 +68,7 @@ public record Obj(
                         ));
                         break;
                     case "mtllib":
-                        MtlLib mtlLib = MtlLib.parse("/" + parts[1]);
+                        MtlLib mtlLib = MtlLib.parse("/obj/" + parts[1]);
                         materials.putAll(mtlLib.materials());
                         break;
                     case "usemtl":
@@ -162,6 +162,33 @@ public record Obj(
         }
 
         return vertexArray;
+    }
+
+    public float[] getStArray() {
+        float[] stArray = new float[vertices.size() * 2];
+
+        for (int i = 0; i < vertices.size(); i++) {
+            Vertex vertex = vertices.get(i);
+            int offset = i * 2;
+            stArray[offset] = vertex.st().x();
+            stArray[offset + 1] = -vertex.st().y();
+        }
+
+        return stArray;
+    }
+
+    public float[] getNormalArray() {
+        float[] normalArray = new float[vertices.size() * 3];
+
+        for (int i = 0; i < vertices.size(); i++) {
+            Vertex vertex = vertices.get(i);
+            int offset = i * 3;
+            normalArray[offset] = vertex.normal().x();
+            normalArray[offset + 1] = vertex.normal().y();
+            normalArray[offset + 2] = vertex.normal().z();
+        }
+
+        return normalArray;
     }
 
     public int[] getTriangleArray() {

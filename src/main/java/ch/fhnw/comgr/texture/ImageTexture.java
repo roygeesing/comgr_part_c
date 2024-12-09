@@ -73,4 +73,19 @@ public record ImageTexture(BufferedImage image, float multiplier, float offset) 
 
         return new Vector3(red, green, blue);
     }
+
+    public int[] getPixels() {
+        int width = image.getWidth();
+        int height = image.getHeight();
+
+        int[] pixels = new int[width * height];
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                pixels[x + y * width] = image.getRGB(x, y);
+            }
+        }
+
+        return pixels;
+    }
 }

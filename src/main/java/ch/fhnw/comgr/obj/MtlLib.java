@@ -51,7 +51,7 @@ public record MtlLib(Map<String, Mtl> materials) {
 //                        currentMaterial.setKa(ImageTexture.ofResource("/" + parts[1]));
 //                        break;
                     case "map_Kd":
-                        currentMaterial.setMapKd(ImageTexture.ofResource("/" + parts[1]));
+                        currentMaterial.setMapKd(ImageTexture.ofResource("/obj/" + parts[1]));
                         break;
 //                    case "map_Ks":
 //                        currentMaterial.setKs(ImageTexture.ofResource("/" + parts[1]));
