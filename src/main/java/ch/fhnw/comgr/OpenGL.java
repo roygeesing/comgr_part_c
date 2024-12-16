@@ -1,5 +1,6 @@
 package ch.fhnw.comgr;
 
+import ch.fhnw.comgr.matrix.Matrix3x3;
 import ch.fhnw.comgr.matrix.Matrix4x4;
 import ch.fhnw.comgr.obj.Obj;
 import ch.fhnw.comgr.texture.ImageTexture;
@@ -7,6 +8,8 @@ import ch.fhnw.comgr.vector.Vector3;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.GLDebugMessageCallback;
+
+import java.util.Arrays;
 
 import static org.lwjgl.opengl.GL.*;
 import static org.lwjgl.opengl.GL11.*;
@@ -63,6 +66,7 @@ public class OpenGL {
         }
         glEnable(GL_FRAMEBUFFER_SRGB);
         glClearColor(0.5f, 0.5f, 0.5f, 0.0f);
+//        glClearColor(1f, 1f, 1f, 0.0f);
 //        glClearDepth(1);
         glEnable(GL_DEPTH_TEST);
 //        glDepthFunc(GL_LESS);
@@ -218,8 +222,7 @@ public class OpenGL {
 //            glUniform1f(glGetUniformLocation(hProgram, "inTime"), frameTime);
 //            glDrawElements(GL_TRIANGLES, triangleIndices.length, GL_UNSIGNED_INT, 0);
 
-            var mvp1 = Matrix4x4.multiply(
-                    vp,
+            var modelMatrix1 = Matrix4x4.multiply(
 //                    Matrix4x4.createScale(30f).transpose(),
                     Matrix4x4.createTranslation(0f, 0f, 12f).transpose(),
                     Matrix4x4.createRotationZ(frameTime * 0.5f + 1f).transpose(),
@@ -227,8 +230,16 @@ public class OpenGL {
 //                    Matrix4x4.createTranslation(0.025f, -0.1f, 0f).transpose()
                     Matrix4x4.createRotationX((float) -Math.PI / 2).transpose()
             );
-            glUniformMatrix4fv(glGetUniformLocation(hProgram, "inMatrix"), false, mvp1.toArray());
+
+            var mvp1 = Matrix4x4.multiply(
+                    vp,
+                    modelMatrix1
+            );
+            Matrix3x3 normalMatrix = modelMatrix1.invert().transpose().multiply(modelMatrix1.getDeterminant()).to3x3();
+
+            glUniformMatrix4fv(glGetUniformLocation(hProgram, "mvpMatrix"), false, mvp1.toArray());
             glUniform1f(glGetUniformLocation(hProgram, "inTime"), frameTime + 1f);
+            glUniformMatrix3fv(glGetUniformLocation(hProgram, "normalMatrix"), false, normalMatrix.toArray());
             glDrawElements(GL_TRIANGLES, triangleIndices.length, GL_UNSIGNED_INT, 0);
 //
 //            var mvp2 = Matrix4x4.multiply(

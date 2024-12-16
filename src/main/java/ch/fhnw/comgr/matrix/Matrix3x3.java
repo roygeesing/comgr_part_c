@@ -77,6 +77,6 @@ public record Matrix3x3(
 	}
 
 	public float[] toArray() {
-		return new float[] { m11, m12, m21, m22 };
+		return new float[] { m11, m12, m13, m21, m22, m23, m31, m32, m33 };
 	}
 }
