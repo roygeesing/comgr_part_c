@@ -31,8 +31,4 @@ public record Shader(int shader) {
             throw new RuntimeException(e);
         }
     }
-
-    public void attach(int program) {
-        GL20.glAttachShader(program, shader);
-    }
 }

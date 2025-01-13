@@ -3,6 +3,10 @@ package ch.fhnw.comgr;
 import ch.fhnw.comgr.matrix.Matrix3x3;
 import ch.fhnw.comgr.matrix.Matrix4x4;
 import ch.fhnw.comgr.obj.Obj;
+import ch.fhnw.comgr.opengl.Program;
+import ch.fhnw.comgr.opengl.Texture;
+import ch.fhnw.comgr.opengl.Vao;
+import ch.fhnw.comgr.opengl.Vbo;
 import ch.fhnw.comgr.texture.ImageTexture;
 import ch.fhnw.comgr.vector.Vector3;
 import org.lwjgl.glfw.GLFW;
@@ -25,7 +29,7 @@ import static org.lwjgl.opengl.GL40.*;
 import static org.lwjgl.opengl.GL41.*;
 
 public class OpenGL {
-    public static void main(String[] args) throws Exception {
+    private static long setupOpenGl() {
         // let GLFW work on the main thread (for macOS)
         // read the following if you want to create windows with awt/swing/javaFX:
         // https://stackoverflow.com/questions/47006058/lwjgl-java-awt-headlessexception-thrown-when-making-a-jframe
@@ -73,92 +77,37 @@ public class OpenGL {
         glEnable(GL_CULL_FACE);
 //        glCullFace(GL_FRONT);
 
-        // load, compile and link shaders
-        Shader vertexShader = Shader.readFile("vertex", GL_VERTEX_SHADER);
-        Shader fragmentShader = Shader.readFile("fragment", GL_FRAGMENT_SHADER);
+        return hWindow;
+    }
 
-        // link shaders to a program
-        var hProgram = glCreateProgram();
-        vertexShader.attach(hProgram);
-        fragmentShader.attach(hProgram);
-        glLinkProgram(hProgram);
-        if (glGetProgrami(hProgram, GL_LINK_STATUS) != GL_TRUE)
-            throw new Exception(glGetProgramInfoLog(hProgram));
+    public static void main(String[] args) throws Exception {
+        long hWindow = setupOpenGl();
 
-        // set up a vao
-        var vaoTriangle = glGenVertexArrays();
-        glBindVertexArray(vaoTriangle);
+        Program program = Program.create("vertex", "fragment");
 
         // load model
-        Obj teapot = Obj.parse("axe");
+        Obj object = Obj.parse("axe");
 
-        // upload model vertices to a vbo
-        var triangleVertices = teapot.getVertexArray();
-        var vboTriangleVertices = glGenBuffers();
-        glBindBuffer(GL_ARRAY_BUFFER, vboTriangleVertices);
-        glBufferData(GL_ARRAY_BUFFER, triangleVertices, GL_STATIC_DRAW);
+        // set up a vao
+        Vao vao = Vao.create(program.program());
+        vao.setTris(object.getTriangleArray());
 
-        // upload model indices to a vbo
-        var triangleIndices = teapot.getTriangleArray();
-        var vboTriangleIndices = glGenBuffers();
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboTriangleIndices);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, triangleIndices, GL_STATIC_DRAW);
+        // vertex positions
+        Vbo posVbo = Vbo.create(object.getVertexArray());
+        vao.addAttribPointer("inPos", 3, posVbo);
 
-        // vertex position vao
-        var posAttribIndex = glGetAttribLocation(hProgram, "inPos");
-        if (posAttribIndex != -1) {
-            glEnableVertexAttribArray(posAttribIndex);
-            glVertexAttribPointer(posAttribIndex, 3, GL_FLOAT, false, 0, 0);
-        }
+        // normals
+        Vbo normalsVbo = Vbo.create(object.getNormalArray());
+        vao.addAttribPointer("inNormal", 3, normalsVbo);
 
-        // normals vbo
-        var normals = teapot.getNormalArray();
-        var vboNormals = glGenBuffers();
-        glBindBuffer(GL_ARRAY_BUFFER, vboNormals);
-        glBufferData(GL_ARRAY_BUFFER, normals, GL_STATIC_DRAW);
+        // texture coordinates
+        Vbo stVbo = Vbo.create(object.getStArray());
+        vao.addAttribPointer("inSt", 2, stVbo);
 
-        // normals vao
-        var normalAttribIndex = glGetAttribLocation(hProgram, "inNormal");
-        if (normalAttribIndex != -1) {
-            glEnableVertexAttribArray(normalAttribIndex);
-            glVertexAttribPointer(normalAttribIndex, 3, GL_FLOAT, false, 0, 0);
-        }
-
-        // texture coordinates vbo
-        var textureCoordinates = teapot.getStArray();
-        var vboTextureCoordinates = glGenBuffers();
-        glBindBuffer(GL_ARRAY_BUFFER, vboTextureCoordinates);
-        glBufferData(GL_ARRAY_BUFFER, textureCoordinates, GL_STATIC_DRAW);
-
-        // texture coordinates vao
-        var stAttribIndex = glGetAttribLocation(hProgram, "inSt");
-        if (stAttribIndex != -1) {
-            glEnableVertexAttribArray(stAttribIndex);
-            glVertexAttribPointer(stAttribIndex, 2, GL_FLOAT, false, 0, 0);
-        }
+        vao.bind();
 
         // image texture
-        ImageTexture imageTexture = ImageTexture.ofResource("/obj/axe.png");
-
-        int texture = glGenTextures();
-        glBindTexture(GL_TEXTURE_2D, texture);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        glTexImage2D(
-                GL_TEXTURE_2D,
-                0,
-                GL_SRGB8,
-                imageTexture.image().getWidth(),
-                imageTexture.image().getHeight(),
-                0,
-                GL_RGBA,
-                GL_UNSIGNED_BYTE,
-                imageTexture.getPixels()
-        );
-        glBindTexture(GL_TEXTURE_2D, 0);
+        Texture texture = Texture.create("/obj/axe.png");
 
         // check for errors during all previous calls
         var error = glGetError();
@@ -169,22 +118,11 @@ public class OpenGL {
         int[] heightArray = new int[1];
 
         // switch to our shader
-        glUseProgram(hProgram);
+        program.use();
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture);
-        glUniform1i(glGetUniformLocation(hProgram, "imageTexture"), 0);
-
-        // light direction
-        glUniform3fv(
-                glGetUniformLocation(hProgram, "lightDirection"),
-                new Vector3(-1, 1, -1).normalize().toArray()
-        );
-
-        glUniform3fv(
-                glGetUniformLocation(hProgram, "cameraDirection"),
-                new Vector3(0, 0, 1).toArray()
-        );
+        program.setUniform("imageTexture", texture);
+        program.setUniform("lightDirection", new Vector3(-1, 1, -1).normalize());
+        program.setUniform("cameraDirection", new Vector3(0, 0, 1));
 
         // render loop
         var startTime = System.currentTimeMillis();
@@ -212,16 +150,6 @@ public class OpenGL {
                     ).transpose()
             );
 
-//            var mvp0 = Matrix4x4.multiply(
-//                    vp,
-//                    Matrix4x4.createTranslation(new Vector3(2f, 0f, 0f)).transpose(),
-//                    Matrix4x4.createRotationX(frameTime).transpose(),
-//                    Matrix4x4.createRotationY(frameTime).transpose()
-//            );
-//            glUniformMatrix4fv(glGetUniformLocation(hProgram, "inMatrix"), false, mvp0.toArray());
-//            glUniform1f(glGetUniformLocation(hProgram, "inTime"), frameTime);
-//            glDrawElements(GL_TRIANGLES, triangleIndices.length, GL_UNSIGNED_INT, 0);
-
             var modelMatrix1 = Matrix4x4.multiply(
 //                    Matrix4x4.createScale(30f).transpose(),
                     Matrix4x4.createTranslation(0f, 0f, 12f).transpose(),
@@ -237,20 +165,11 @@ public class OpenGL {
             );
             Matrix3x3 normalMatrix = modelMatrix1.invert().transpose().multiply(modelMatrix1.getDeterminant()).to3x3();
 
-            glUniformMatrix4fv(glGetUniformLocation(hProgram, "mvpMatrix"), false, mvp1.toArray());
-            glUniform1f(glGetUniformLocation(hProgram, "inTime"), frameTime + 1f);
-            glUniformMatrix3fv(glGetUniformLocation(hProgram, "normalMatrix"), false, normalMatrix.toArray());
-            glDrawElements(GL_TRIANGLES, triangleIndices.length, GL_UNSIGNED_INT, 0);
-//
-//            var mvp2 = Matrix4x4.multiply(
-//                    vp,
-//                    Matrix4x4.createTranslation(new Vector3(-2f, 0f, 0f)).transpose(),
-//                    Matrix4x4.createRotationX(frameTime + 2f).transpose(),
-//                    Matrix4x4.createRotationY(frameTime + 2f).transpose()
-//            );
-//            glUniformMatrix4fv(glGetUniformLocation(hProgram, "inMatrix"), false, mvp2.toArray());
-//            glUniform1f(glGetUniformLocation(hProgram, "inTime"), frameTime + 2f);
-//            glDrawElements(GL_TRIANGLES, triangleIndices.length, GL_UNSIGNED_INT, 0);
+            program.setUniform("mvpMatrix", mvp1);
+            program.setUniform("inTime", frameTime);
+            program.setUniform("normalMatrix", normalMatrix);
+
+            glDrawElements(GL_TRIANGLES, object.tris().size() * 3, GL_UNSIGNED_INT, 0);
 
             // display
             GLFW.glfwSwapBuffers(hWindow);
