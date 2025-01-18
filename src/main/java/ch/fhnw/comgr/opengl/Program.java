@@ -46,28 +46,34 @@ public record Program(int program) {
     }
 
     public void setUniform(String name, int value) {
+        use();
         glUniform1i(glGetUniformLocation(program, name), value);
     }
 
     public void setUniform(String name, float value) {
+        use();
         glUniform1f(glGetUniformLocation(program, name), value);
     }
 
     public void setUniform(String name, Vector3 vector3) {
+        use();
         glUniform3fv(glGetUniformLocation(program, name), vector3.toArray());
     }
 
     public void setUniform(String name, Matrix3x3 matrix3x3) {
+        use();
         glUniformMatrix3fv(glGetUniformLocation(program, name), false, matrix3x3.toArray());
     }
 
     public void setUniform(String name, Matrix4x4 matrix4x4) {
+        use();
         glUniformMatrix4fv(glGetUniformLocation(program, name), false, matrix4x4.toArray());
     }
 
     public void setUniform(String name, Texture texture) {
+        use();
         glActiveTexture(GL_TEXTURE0);
         texture.bind();
-        setUniform("imageTexture", 0);
+        setUniform(name, 0);
     }
 }

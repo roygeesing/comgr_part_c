@@ -2,6 +2,7 @@ package ch.fhnw.comgr.texture;
 
 import ch.fhnw.comgr.vector.Vector2;
 import ch.fhnw.comgr.vector.Vector3;
+import ch.fhnw.comgr.vector.Vector4;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -9,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import static ch.fhnw.comgr.vector.Vector3.BYTE_MAX_VALUE;
+import static ch.fhnw.comgr.vector.Vector3.GAMMA;
 
 public record ImageTexture(BufferedImage image, float multiplier, float offset) implements Texture {
     public static ImageTexture ofResource(String resourcePath, float multiplier, float offset) {
@@ -82,7 +84,14 @@ public record ImageTexture(BufferedImage image, float multiplier, float offset) 
 
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                pixels[x + y * width] = image.getRGB(x, y);
+                int srgba = image.getRGB(x, y);
+
+                float alpha = (srgba >> 24 & BYTE_MAX_VALUE) / (float) BYTE_MAX_VALUE;
+                float red = (float) Math.pow((srgba >> 16 & BYTE_MAX_VALUE) / (float) BYTE_MAX_VALUE, GAMMA);
+                float green = (float) Math.pow((srgba >> 8 & BYTE_MAX_VALUE) / (float) BYTE_MAX_VALUE, GAMMA);
+                float blue = (float) Math.pow((srgba & BYTE_MAX_VALUE) / (float) BYTE_MAX_VALUE, GAMMA);
+
+                pixels[x + y * width] = ((int) (alpha * BYTE_MAX_VALUE) << 24) + ((int) (red * BYTE_MAX_VALUE) << 0) + ((int) (green * BYTE_MAX_VALUE) << 8) + ((int) (blue * BYTE_MAX_VALUE) << 16);
             }
         }
 

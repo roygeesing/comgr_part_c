@@ -3,10 +3,7 @@ package ch.fhnw.comgr;
 import ch.fhnw.comgr.matrix.Matrix3x3;
 import ch.fhnw.comgr.matrix.Matrix4x4;
 import ch.fhnw.comgr.obj.Obj;
-import ch.fhnw.comgr.opengl.Program;
-import ch.fhnw.comgr.opengl.Texture;
-import ch.fhnw.comgr.opengl.Vao;
-import ch.fhnw.comgr.opengl.Vbo;
+import ch.fhnw.comgr.opengl.*;
 import ch.fhnw.comgr.texture.ImageTexture;
 import ch.fhnw.comgr.vector.Vector3;
 import org.lwjgl.glfw.GLFW;
@@ -14,6 +11,8 @@ import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.GLDebugMessageCallback;
 
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 
 import static org.lwjgl.opengl.GL.*;
 import static org.lwjgl.opengl.GL11.*;
@@ -83,31 +82,29 @@ public class OpenGL {
     public static void main(String[] args) throws Exception {
         long hWindow = setupOpenGl();
 
-        Program program = Program.create("vertex", "fragment");
+        List<SceneObject> sceneObjects = List.of(
+                SceneObject.create("vertex", "texture_fragment", "cube", new Vector3(.5f, 0, 0), "/obj/tree.png"),
+                SceneObject.create("vertex", "color_fragment", "cube", new Vector3(-.5f, 0, 3), Vector3.BLUE)
+        );
 
-        // load model
-        Obj object = Obj.parse("cube");
+        for (SceneObject sceneObject : sceneObjects) {
+            sceneObject.setUniform("lightDirection", new Vector3(-1, 1, -1).normalize());
+            sceneObject.setUniform("cameraDirection", new Vector3(0, 0, 1));
+        }
 
-        // set up a vao
-        Vao vao = Vao.create(program.program());
-        vao.setTris(object.getTriangleArray());
+        Vector3 cameraPosition = new Vector3(0, 0, -4);
 
-        // vertex positions
-        Vbo posVbo = Vbo.create(object.getVertexArray());
-        vao.addAttribPointer("inPos", 3, posVbo);
+        sceneObjects = sceneObjects.stream()
+                .sorted(Comparator.comparing(sceneObject -> -cameraPosition.subtract(sceneObject.position()).magnitude()))
+                .toList();
 
-        // normals
-        Vbo normalsVbo = Vbo.create(object.getNormalArray());
-        vao.addAttribPointer("inNormal", 3, normalsVbo);
+//        SceneObject object = SceneObject.create("vertex", "fragment", "cube", "/obj/tree.png");
 
-        // texture coordinates
-        Vbo stVbo = Vbo.create(object.getStArray());
-        vao.addAttribPointer("inSt", 2, stVbo);
-
-        vao.bind();
-
-        // image texture
-        Texture texture = Texture.create("/obj/tree.png");
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glEnable(GL_BLEND);
+//        glDisable(GL_CULL_FACE);
+        glDisable(GL_DEPTH_TEST);
+        glDepthMask(true);
 
         // check for errors during all previous calls
         var error = glGetError();
@@ -116,13 +113,6 @@ public class OpenGL {
 
         int[] widthArray = new int[1];
         int[] heightArray = new int[1];
-
-        // switch to our shader
-        program.use();
-
-        program.setUniform("imageTexture", texture);
-        program.setUniform("lightDirection", new Vector3(-1, 1, -1).normalize());
-        program.setUniform("cameraDirection", new Vector3(0, 0, 1));
 
         // render loop
         var startTime = System.currentTimeMillis();
@@ -144,32 +134,34 @@ public class OpenGL {
                             100f
                     ).transpose(),
                     Matrix4x4.createLookAt(
-                            new Vector3(0, 0, -4),
+                            cameraPosition,
                             new Vector3(0, 0, 0),
                             new Vector3(0, 1, 0)
                     ).transpose()
             );
 
-            var modelMatrix1 = Matrix4x4.multiply(
+            for (SceneObject sceneObject : sceneObjects.subList(0, 2)) {
+                var modelMatrix = Matrix4x4.multiply(
 //                    Matrix4x4.createScale(30f).transpose(),
-                    Matrix4x4.createTranslation(0f, 0f, 0f).transpose(),
-                    Matrix4x4.createRotationZ(frameTime * 0.5f + 1f).transpose(),
-                    Matrix4x4.createRotationY(frameTime + 1f).transpose(),
+                        Matrix4x4.createTranslation(sceneObject.position()).transpose(),
+                        Matrix4x4.createRotationZ(frameTime * 0.5f + 1f).transpose(),
+                        Matrix4x4.createRotationY(frameTime + 1f).transpose(),
 //                    Matrix4x4.createTranslation(0.025f, -0.1f, 0f).transpose()
-                    Matrix4x4.createRotationX((float) -Math.PI / 2).transpose()
-            );
+                        Matrix4x4.createRotationX((float) -Math.PI / 2).transpose()
+                );
 
-            var mvp1 = Matrix4x4.multiply(
-                    vp,
-                    modelMatrix1
-            );
-            Matrix3x3 normalMatrix = modelMatrix1.invert().transpose().multiply(modelMatrix1.getDeterminant()).to3x3();
+                var mvp = Matrix4x4.multiply(
+                        vp,
+                        modelMatrix
+                );
+                Matrix3x3 normalMatrix = modelMatrix.invert().transpose().multiply(modelMatrix.getDeterminant()).to3x3();
 
-            program.setUniform("mvpMatrix", mvp1);
-            program.setUniform("inTime", frameTime);
-            program.setUniform("normalMatrix", normalMatrix);
+                sceneObject.setUniform("mvpMatrix", mvp);
+                sceneObject.setUniform("inTime", frameTime);
+                sceneObject.setUniform("normalMatrix", normalMatrix);
 
-            glDrawElements(GL_TRIANGLES, object.tris().size() * 3, GL_UNSIGNED_INT, 0);
+                sceneObject.draw();
+            }
 
             // display
             GLFW.glfwSwapBuffers(hWindow);
