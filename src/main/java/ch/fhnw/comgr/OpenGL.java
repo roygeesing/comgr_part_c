@@ -4,6 +4,7 @@ import ch.fhnw.comgr.matrix.Matrix3x3;
 import ch.fhnw.comgr.matrix.Matrix4x4;
 import ch.fhnw.comgr.obj.Obj;
 import ch.fhnw.comgr.opengl.*;
+import ch.fhnw.comgr.texture.CheckerboardTexture;
 import ch.fhnw.comgr.texture.ImageTexture;
 import ch.fhnw.comgr.vector.Vector3;
 import org.lwjgl.glfw.GLFW;
@@ -83,7 +84,8 @@ public class OpenGL {
         long hWindow = setupOpenGl();
 
         List<SceneObject> sceneObjects = List.of(
-                SceneObject.create("vertex", "texture_fragment", "cube", new Vector3(.5f, 0, 0), "/obj/tree.png"),
+                SceneObject.create("vertex", "texture_fragment", "cube", new Vector3(.5f, 0, 0), ImageTexture.ofResource("/obj/tree.png")),
+//                SceneObject.create("vertex", "texture_fragment", "cube", new Vector3(-2.5f, 0, 0), new CheckerboardTexture(10, 10, 1, Vector3.BLACK, Vector3.WHITE)),
                 SceneObject.create("vertex", "color_fragment", "cube", new Vector3(-.5f, 0, 3), Vector3.BLUE)
         );
 
@@ -91,6 +93,10 @@ public class OpenGL {
             sceneObject.setUniform("lightDirection", new Vector3(-1, 1, -1).normalize());
             sceneObject.setUniform("cameraDirection", new Vector3(0, 0, 1));
         }
+
+        SceneObject floor = SceneObject.create("vertex", "texture_fragment", "cube", new Vector3(0, -101, 0), new CheckerboardTexture(5000, 5000, 10, Vector3.BLACK, Vector3.WHITE));
+        floor.setUniform("lightDirection", new Vector3(-1, 1, -1).normalize());
+        floor.setUniform("cameraDirection", new Vector3(0, 0, 1));
 
         Vector3 cameraPosition = new Vector3(0, 0, -4);
 
@@ -100,7 +106,7 @@ public class OpenGL {
 
 //        SceneObject object = SceneObject.create("vertex", "fragment", "cube", "/obj/tree.png");
 
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         glEnable(GL_BLEND);
 //        glDisable(GL_CULL_FACE);
         glDisable(GL_DEPTH_TEST);
@@ -140,7 +146,19 @@ public class OpenGL {
                     ).transpose()
             );
 
-            for (SceneObject sceneObject : sceneObjects.subList(0, 2)) {
+            var floorModelMatrix = Matrix4x4.multiply(
+                    Matrix4x4.createTranslation(floor.position()).transpose(),
+                    Matrix4x4.createScale(100).transpose()
+                    );
+            floor.setUniform("mvpMatrix", Matrix4x4.multiply(
+                    vp,
+                    floorModelMatrix
+            ));
+            floor.setUniform("inTime", frameTime);
+            floor.setUniform("normalMatrix", floorModelMatrix.invert().transpose().multiply(floorModelMatrix.getDeterminant()).to3x3());
+            floor.draw();
+
+            for (SceneObject sceneObject : sceneObjects) {
                 var modelMatrix = Matrix4x4.multiply(
 //                    Matrix4x4.createScale(30f).transpose(),
                         Matrix4x4.createTranslation(sceneObject.position()).transpose(),

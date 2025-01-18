@@ -76,6 +76,17 @@ public record ImageTexture(BufferedImage image, float multiplier, float offset) 
         return new Vector3(red, green, blue);
     }
 
+    @Override
+    public int getWidth() {
+        return image.getWidth();
+    }
+
+    @Override
+    public int getHeight() {
+        return image.getHeight();
+    }
+
+    @Override
     public int[] getPixels() {
         int width = image.getWidth();
         int height = image.getHeight();
@@ -87,11 +98,11 @@ public record ImageTexture(BufferedImage image, float multiplier, float offset) 
                 int srgba = image.getRGB(x, y);
 
                 float alpha = (srgba >> 24 & BYTE_MAX_VALUE) / (float) BYTE_MAX_VALUE;
-                float red = (float) Math.pow((srgba >> 16 & BYTE_MAX_VALUE) / (float) BYTE_MAX_VALUE, GAMMA);
-                float green = (float) Math.pow((srgba >> 8 & BYTE_MAX_VALUE) / (float) BYTE_MAX_VALUE, GAMMA);
-                float blue = (float) Math.pow((srgba & BYTE_MAX_VALUE) / (float) BYTE_MAX_VALUE, GAMMA);
+                float red = (float) Math.pow((srgba >> 16 & BYTE_MAX_VALUE) / (float) BYTE_MAX_VALUE, GAMMA) * alpha;
+                float green = (float) Math.pow((srgba >> 8 & BYTE_MAX_VALUE) / (float) BYTE_MAX_VALUE, GAMMA) * alpha;
+                float blue = (float) Math.pow((srgba & BYTE_MAX_VALUE) / (float) BYTE_MAX_VALUE, GAMMA) * alpha;
 
-                pixels[x + y * width] = ((int) (alpha * BYTE_MAX_VALUE) << 24) + ((int) (red * BYTE_MAX_VALUE) << 0) + ((int) (green * BYTE_MAX_VALUE) << 8) + ((int) (blue * BYTE_MAX_VALUE) << 16);
+                pixels[x + y * width] = ((int) (alpha * BYTE_MAX_VALUE) << 24) + ((int) (red * BYTE_MAX_VALUE)) + ((int) (green * BYTE_MAX_VALUE) << 8) + ((int) (blue * BYTE_MAX_VALUE) << 16);
             }
         }
 

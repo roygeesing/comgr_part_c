@@ -72,8 +72,6 @@ public record Program(int program) {
 
     public void setUniform(String name, Texture texture) {
         use();
-        glActiveTexture(GL_TEXTURE0);
-        texture.bind();
         setUniform(name, 0);
     }
 }
