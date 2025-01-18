@@ -18,5 +18,5 @@ void main()
 {
     gl_Position = vec4(inPos, 1.0) * mvpMatrix;
     st = inSt;
-    normal = inNormal * normalMatrix * vec3(-1, 1, 1);
+    normal = normalize(inNormal * normalMatrix * vec3(-1, 1, 1));
 }

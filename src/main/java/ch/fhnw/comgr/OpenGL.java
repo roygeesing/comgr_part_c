@@ -86,7 +86,7 @@ public class OpenGL {
         Program program = Program.create("vertex", "fragment");
 
         // load model
-        Obj object = Obj.parse("axe");
+        Obj object = Obj.parse("cube");
 
         // set up a vao
         Vao vao = Vao.create(program.program());
@@ -107,7 +107,7 @@ public class OpenGL {
         vao.bind();
 
         // image texture
-        Texture texture = Texture.create("/obj/axe.png");
+        Texture texture = Texture.create("/obj/tree.png");
 
         // check for errors during all previous calls
         var error = glGetError();
@@ -152,7 +152,7 @@ public class OpenGL {
 
             var modelMatrix1 = Matrix4x4.multiply(
 //                    Matrix4x4.createScale(30f).transpose(),
-                    Matrix4x4.createTranslation(0f, 0f, 12f).transpose(),
+                    Matrix4x4.createTranslation(0f, 0f, 0f).transpose(),
                     Matrix4x4.createRotationZ(frameTime * 0.5f + 1f).transpose(),
                     Matrix4x4.createRotationY(frameTime + 1f).transpose(),
 //                    Matrix4x4.createTranslation(0.025f, -0.1f, 0f).transpose()

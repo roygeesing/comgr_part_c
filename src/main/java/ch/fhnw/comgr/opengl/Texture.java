@@ -20,10 +20,11 @@ import static org.lwjgl.opengl.GL11.glPixelStorei;
 import static org.lwjgl.opengl.GL11.glTexImage2D;
 import static org.lwjgl.opengl.GL11.glTexParameteri;
 import static org.lwjgl.opengl.GL21.GL_SRGB8;
+import static org.lwjgl.opengl.GL21.GL_SRGB8_ALPHA8;
 
 public record Texture(int texture) {
     public static Texture create(String filename) {
-        ImageTexture imageTexture = ImageTexture.ofResource("/obj/axe.png");
+        ImageTexture imageTexture = ImageTexture.ofResource(filename);
 
         Texture texture = new Texture(glGenTextures());
 
@@ -37,7 +38,7 @@ public record Texture(int texture) {
         glTexImage2D(
                 GL_TEXTURE_2D,
                 0,
-                GL_SRGB8,
+                GL_SRGB8_ALPHA8,
                 imageTexture.image().getWidth(),
                 imageTexture.image().getHeight(),
                 0,

@@ -11,18 +11,19 @@ out vec4 outColor;
 in vec2 st;
 in vec3 normal;
 
-vec3 diffuse() {
+vec4 diffuse() {
     vec4 texColor = texture(imageTexture, st);
-    return texColor.bgr * max(dot(normal, lightDirection), 0);
+    return texColor * max(dot(normal, lightDirection), 0);
 }
 
 vec3 specular() {
     vec3 r = reflect(lightDirection, normal);
-    return vec3(1, 1, 1) * pow(dot(r, cameraDirection), 80);
+    return vec3(1, 1, 1) * pow(max(dot(r, cameraDirection), 0), 80);
 }
 
 void main()
 {
-    vec4 texColor = texture(imageTexture, st);
-    outColor = vec4(diffuse() + specular(), 1);
+    outColor = diffuse() + vec4(specular(), 1);
+//    outColor = vec4(diffuse(), 1);
+//    outColor = vec4(specular(), 1.0);
 }
