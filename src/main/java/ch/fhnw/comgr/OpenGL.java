@@ -84,9 +84,11 @@ public class OpenGL {
         long hWindow = setupOpenGl();
 
         List<SceneObject> sceneObjects = List.of(
-                SceneObject.create("vertex", "texture_fragment", "cube", new Vector3(.5f, 0, 0), ImageTexture.ofResource("/obj/tree.png")),
+                SceneObject.create("vertex", "texture_fragment", "cube", new Vector3(.5f, 0, -1), ImageTexture.ofResource("/obj/tree.png")),
 //                SceneObject.create("vertex", "texture_fragment", "cube", new Vector3(-2.5f, 0, 0), new CheckerboardTexture(10, 10, 1, Vector3.BLACK, Vector3.WHITE)),
-                SceneObject.create("vertex", "color_fragment", "cube", new Vector3(-.5f, 0, 3), Vector3.BLUE)
+                SceneObject.create("vertex", "color_fragment", "cube", new Vector3(-.5f, 0, 3), Vector3.BLUE),
+                SceneObject.create("vertex", "color_fragment", "cube", new Vector3(-1.5f, 2, 3), Vector3.RED),
+                SceneObject.create("vertex", "color_fragment", "cube", new Vector3(1.5f, 2, 3), Vector3.GREEN)
         );
 
         for (SceneObject sceneObject : sceneObjects) {

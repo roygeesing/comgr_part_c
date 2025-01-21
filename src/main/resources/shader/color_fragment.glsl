@@ -12,7 +12,7 @@ in vec2 st;
 in vec3 normal;
 
 vec3 diffuse() {
-    return color; // * max(dot(normal, lightDirection), 0);
+    return color * max(dot(normal, lightDirection), 0);
 }
 
 vec3 specular() {
@@ -22,7 +22,5 @@ vec3 specular() {
 
 void main()
 {
-    outColor = vec4(diffuse(), 1); // + vec4(specular(), 1);
-    //    outColor = vec4(diffuse(), 1);
-    //    outColor = vec4(specular(), 1.0);
+    outColor = vec4(diffuse(), 1) + vec4(specular(), 1);
 }
