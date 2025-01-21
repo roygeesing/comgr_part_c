@@ -122,6 +122,36 @@ public class OpenGL {
         int[] widthArray = new int[1];
         int[] heightArray = new int[1];
 
+        Program framebufferProgram = Program.create("framebuffer_vertex", "framebuffer_fragment");
+
+        int vao = glGenVertexArrays();
+        glBindVertexArray(vao);
+
+        int vbo = glGenBuffers();
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, new float[] {
+                1.0f,  1.0f, 0.0f,  1.0f, 1.0f,
+                -1.0f,  1.0f, 0.0f,  0.0f, 1.0f,
+                -1.0f, -1.0f, 0.0f,  0.0f, 0.0f,
+                1.0f, -1.0f, 0.0f,  1.0f, 0.0f
+        }, GL_STATIC_DRAW);
+
+        var attribIndex = glGetAttribLocation(framebufferProgram.program(), "inPos");
+        if (attribIndex != -1) {
+            glEnableVertexAttribArray(attribIndex);
+            glVertexAttribPointer(attribIndex, 3, GL_FLOAT, false, 5 * Float.BYTES, 0);
+        }
+
+        attribIndex = glGetAttribLocation(framebufferProgram.program(), "inSt");
+        if (attribIndex != -1) {
+            glEnableVertexAttribArray(attribIndex);
+            glVertexAttribPointer(attribIndex, 2, GL_FLOAT, false, 5 * Float.BYTES, 3 * Float.BYTES);
+        }
+
+        int tex = glGenTextures();
+        int rbo = glGenRenderbuffers();
+        int fbo = glGenFramebuffers();
+
         // render loop
         var startTime = System.currentTimeMillis();
         while (!GLFW.glfwWindowShouldClose(hWindow)) {
@@ -130,6 +160,21 @@ public class OpenGL {
             GLFW.glfwGetWindowSize(hWindow, widthArray, heightArray);
             int width = widthArray[0];
             int height = heightArray[0];
+
+            // framebuffer
+            glBindTexture(GL_TEXTURE_2D, tex);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+
+            glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+
+            glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo);
 
             // clear screen and z-buffer
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -182,6 +227,23 @@ public class OpenGL {
 
                 sceneObject.draw();
             }
+
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            glBindVertexArray(vao);
+
+//            glDisable(GL_DEPTH_TEST);  // Disable depth testing for now
+//            glDisable(GL_BLEND);       // Disable blending for now
+
+            framebufferProgram.use();
+            framebufferProgram.setUniform("imageTexture", 0);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, tex);
+
+            glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+
 
             // display
             GLFW.glfwSwapBuffers(hWindow);
